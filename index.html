@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Акт выполненных работ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  .header {
+    background: #1a3a5c;
+    color: white;
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  .header p { font-size: 12px; opacity: 0.75; margin-top: 4px; }
+
+  .form-body {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a3a5c;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e8f0f8;
+  }
+
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 4px;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #dde3ea;
+    border-radius: 7px;
+    font-size: 15px;
+    color: #1a1a1a;
+    background: #fafbfc;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none;
+    border-color: #1a3a5c;
+    background: white;
+  }
+  .field textarea { resize: vertical; min-height: 80px; }
+
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+  /* Чекбоксы */
+  .check-group { display: flex; flex-direction: column; gap: 8px; }
+  .check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1.5px solid #dde3ea;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .check-item:has(input:checked) {
+    border-color: #1a3a5c;
+    background: #f0f5ff;
+  }
+  .check-item input[type="checkbox"], .check-item input[type="radio"] {
+    width: 18px; height: 18px;
+    accent-color: #1a3a5c;
+    flex-shrink: 0;
+  }
+  .check-item span { font-size: 14px; }
+
+  .check-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* Таблица материалов */
+  .parts-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .parts-table th {
+    background: #f0f5ff;
+    color: #1a3a5c;
+    font-weight: 700;
+    padding: 8px 6px;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+  .parts-table td { padding: 4px 4px; border-bottom: 1px solid #eee; }
+  .parts-table input {
+    width: 100%;
+    padding: 7px 6px;
+    border: 1px solid #dde3ea;
+    border-radius: 5px;
+    font-size: 13px;
+    background: #fafbfc;
+  }
+  .parts-table input:focus { outline: none; border-color: #1a3a5c; }
+
+  .add-row-btn {
+    margin-top: 10px;
+    padding: 8px 14px;
+    background: #e8f0f8;
+    color: #1a3a5c;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Подпись */
+  .signature-wrap {
+    border: 2px dashed #1a3a5c;
+    border-radius: 10px;
+    background: #fafbff;
+    overflow: hidden;
+    position: relative;
+  }
+  .signature-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #aab;
+    font-size: 13px;
+    pointer-events: none;
+    text-align: center;
+    line-height: 1.5;
+  }
+  canvas#sigCanvas {
+    display: block;
+    width: 100%;
+    height: 180px;
+    touch-action: none;
+    cursor: crosshair;
+  }
+  .sig-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .sig-clear {
+    padding: 8px 16px;
+    background: #fee;
+    color: #c00;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Кнопка отправки */
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: #1a3a5c;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+    margin-top: 8px;
+  }
+  .submit-btn:active { background: #122840; }
+  .submit-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+  /* Статус */
+  .status-msg {
+    text-align: center;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .status-msg.success { background: #e6f9ef; color: #1a7a40; display: block; }
+  .status-msg.error { background: #fee; color: #c00; display: block; }
+  .status-msg.loading { background: #f0f5ff; color: #1a3a5c; display: block; }
+
+  /* Результат */
+  .result-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .required-star { color: #c00; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Акт Выполненных Работ</h1>
+  <p>Заполняется инженером на объекте</p>
+</div>
+
+<div class="form-body">
+
+  <div id="statusMsg" class="status-msg"></div>
+
+  <!-- ЗАЯВКА -->
+  <div class="card">
+    <div class="card-title">📋 Заявка</div>
+    <div class="row-2">
+      <div class="field">
+        <label>Номер заявки <span class="required-star">*</span></label>
+        <input type="text" id="ticketNum" placeholder="H175268" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Дата <span class="required-star">*</span></label>
+        <input type="date" id="actDate">
+      </div>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Время начала</label>
+        <input type="time" id="timeStart">
+      </div>
+      <div class="field">
+        <label>Время завершения</label>
+        <input type="time" id="timeEnd">
+      </div>
+    </div>
+  </div>
+
+  <!-- ЗАКАЗЧИК -->
+  <div class="card">
+    <div class="card-title">🏢 Заказчик</div>
+    <div class="field">
+      <label>Организация (заказчик) <span class="required-star">*</span></label>
+      <input type="text" id="orgName" placeholder="АО ВCITA НКО">
+    </div>
+    <div class="field">
+      <label>Адрес проведения работ <span class="required-star">*</span></label>
+      <input type="text" id="orgAddress" placeholder="ул. Ольминского, д.6">
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Контактное лицо</label>
+        <input type="text" id="contactName" placeholder="ФИО">
+      </div>
+      <div class="field">
+        <label>Телефон</label>
+        <input type="tel" id="contactPhone" placeholder="+7 (xxx) xxx-xx-xx" inputmode="tel">
+      </div>
+    </div>
+  </div>
+
+  <!-- ОБОРУДОВАНИЕ -->
+  <div class="card">
+    <div class="card-title">🖨️ Оборудование</div>
+    <div class="row-2">
+      <div class="field">
+        <label>Модель <span class="required-star">*</span></label>
+        <input type="text" id="model" placeholder="HP LJ M225rdn">
+      </div>
+      <div class="field">
+        <label>Серийный номер</label>
+        <input type="text" id="serial" placeholder="CNB6H6XBSX" autocomplete="off">
+      </div>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>IP адрес</label>
+        <input type="text" id="ipAddr" placeholder="192.168.0.102" inputmode="decimal">
+      </div>
+      <div class="field">
+        <label>Версия прошивки</label>
+        <input type="text" id="firmware" placeholder="20150129">
+      </div>
+    </div>
+    <div class="row-2">
+      <div class="field">
+        <label>Счётчик Ч/Б</label>
+        <input type="number" id="cntBW" placeholder="109675" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Счётчик Цвет</label>
+        <input type="number" id="cntColor" placeholder="—" inputmode="numeric">
+      </div>
+    </div>
+  </div>
+
+  <!-- ТИП РАБОТ -->
+  <div class="card">
+    <div class="card-title">🔧 Тип работ</div>
+    <div class="check-cols">
+      <label class="check-item"><input type="checkbox" name="workType" value="Диагностика"><span>Диагностика</span></label>
+      <label class="check-item"><input type="checkbox" name="workType" value="Ремонт"><span>Ремонт</span></label>
+      <label class="check-item"><input type="checkbox" name="workType" value="Профилактика"><span>Профилактика</span></label>
+      <label class="check-item"><input type="checkbox" name="workType" value="Настройка"><span>Настройка</span></label>
+      <label class="check-item"><input type="checkbox" name="workType" value="Доставка"><span>Доставка</span></label>
+      <label class="check-item"><input type="checkbox" name="workType" value="Установка"><span>Установка</span></label>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label>Дополнительная информация</label>
+      <textarea id="workComment" placeholder="Описание выполненных работ..."></textarea>
+    </div>
+  </div>
+
+  <!-- СОСТОЯНИЕ -->
+  <div class="card">
+    <div class="card-title">📊 Состояние оборудования</div>
+    <div class="check-group">
+      <label class="check-item"><input type="radio" name="deviceState" value="Исправен (301)"><span>✅ Исправен (301)</span></label>
+      <label class="check-item"><input type="radio" name="deviceState" value="Частично работоспособен (302)"><span>⚠️ Частично работоспособен (302)</span></label>
+      <label class="check-item"><input type="radio" name="deviceState" value="Не работоспособен (303)"><span>❌ Не работоспособен (303)</span></label>
+    </div>
+  </div>
+
+  <!-- РЕЗУЛЬТАТ -->
+  <div class="card">
+    <div class="card-title">🏁 Результат выполнения работ</div>
+    <div class="check-cols">
+      <label class="check-item"><input type="radio" name="result" value="Вызов завершён"><span>Вызов завершён</span></label>
+      <label class="check-item"><input type="radio" name="result" value="Требуется доп. выезд"><span>Доп. выезд</span></label>
+      <label class="check-item"><input type="radio" name="result" value="Аппарат исправен"><span>Аппарат исправен</span></label>
+      <label class="check-item"><input type="radio" name="result" value="Требуются запчасти"><span>Нужны запчасти</span></label>
+      <label class="check-item"><input type="radio" name="result" value="Вызов отменён"><span>Вызов отменён</span></label>
+      <label class="check-item"><input type="radio" name="result" value="Аппарат неисправен"><span>Аппарат неисправен</span></label>
+    </div>
+  </div>
+
+  <!-- ЗАПЧАСТИ -->
+  <div class="card">
+    <div class="card-title">🔩 Заменены / требуются детали</div>
+    <table class="parts-table">
+      <thead>
+        <tr>
+          <th style="width:30%">Каталожный №</th>
+          <th>Название</th>
+          <th style="width:18%">Уст.</th>
+          <th style="width:18%">Треб.</th>
+        </tr>
+      </thead>
+      <tbody id="partsBody">
+        <tr>
+          <td><input type="text" placeholder="CF226X"></td>
+          <td><input type="text" placeholder="Картридж"></td>
+          <td><input type="number" placeholder="1" inputmode="numeric"></td>
+          <td><input type="number" placeholder="0" inputmode="numeric"></td>
+        </tr>
+        <tr>
+          <td><input type="text"></td>
+          <td><input type="text"></td>
+          <td><input type="number" inputmode="numeric"></td>
+          <td><input type="number" inputmode="numeric"></td>
+        </tr>
+        <tr>
+          <td><input type="text"></td>
+          <td><input type="text"></td>
+          <td><input type="number" inputmode="numeric"></td>
+          <td><input type="number" inputmode="numeric"></td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="add-row-btn" onclick="addPartRow()">+ Добавить строку</button>
+  </div>
+
+  <!-- ИНЖЕНЕР -->
+  <div class="card">
+    <div class="card-title">👤 Инженер</div>
+    <div class="field">
+      <label>ФИО инженера <span class="required-star">*</span></label>
+      <input type="text" id="engineerName" placeholder="Иванов И.И.">
+    </div>
+    <div class="field">
+      <label>Email менеджера (куда отправить акт) <span class="required-star">*</span></label>
+      <input type="email" id="managerEmail" placeholder="manager@company.ru" inputmode="email">
+    </div>
+  </div>
+
+  <!-- ПОДПИСЬ КЛИЕНТА -->
+  <div class="card">
+    <div class="card-title">✍️ Подпись представителя клиента</div>
+    <div class="field">
+      <label>ФИО представителя клиента</label>
+      <input type="text" id="clientName" placeholder="Петров П.П.">
+    </div>
+    <div class="field">
+      <label>Подпись <span class="required-star">*</span> — проведите пальцем по экрану</label>
+      <div class="signature-wrap">
+        <canvas id="sigCanvas" width="600" height="180"></canvas>
+        <div class="signature-hint" id="sigHint">☝️ Место для подписи<br>проведите пальцем или мышью</div>
+      </div>
+      <div class="sig-controls">
+        <button class="sig-clear" onclick="clearSignature()">🗑 Очистить подпись</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="submitAct()">
+    📤 Отправить акт менеджеру
+  </button>
+
+  <p style="text-align:center; font-size:11px; color:#999; margin: 12px 0 24px;">
+    После отправки акт будет направлен на email менеджера в виде PDF
+  </p>
+
+</div>
+
+<script>
+// ===== ПОДПИСЬ =====
+const canvas = document.getElementById('sigCanvas');
+const ctx = canvas.getContext('2d');
+let isDrawing = false;
+let hasSig = false;
+
+function resizeCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  canvas.width = rect.width * ratio;
+  canvas.height = 180 * ratio;
+  ctx.scale(ratio, ratio);
+  ctx.putImageData(imgData, 0, 0);
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const src = e.touches ? e.touches[0] : e;
+  return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+}
+
+canvas.addEventListener('mousedown', e => { isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+canvas.addEventListener('mousemove', e => { if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; document.getElementById('sigHint').style.display = 'none'; });
+canvas.addEventListener('mouseup', () => isDrawing = false);
+canvas.addEventListener('mouseleave', () => isDrawing = false);
+
+canvas.addEventListener('touchstart', e => { e.preventDefault(); isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; document.getElementById('sigHint').style.display = 'none'; }, { passive: false });
+canvas.addEventListener('touchend', () => isDrawing = false);
+
+function clearSignature() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  hasSig = false;
+  document.getElementById('sigHint').style.display = 'block';
+}
+
+// ===== ТАБЛИЦА ЗАПЧАСТЕЙ =====
+function addPartRow() {
+  const tbody = document.getElementById('partsBody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text"></td>
+    <td><input type="text"></td>
+    <td><input type="number" inputmode="numeric"></td>
+    <td><input type="number" inputmode="numeric"></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+// ===== ДАТА ПО УМОЛЧАНИЮ =====
+document.getElementById('actDate').valueAsDate = new Date();
+
+// ===== СБОР ДАННЫХ =====
+function collectData() {
+  const workTypes = [...document.querySelectorAll('input[name="workType"]:checked')].map(el => el.value);
+  const deviceState = document.querySelector('input[name="deviceState"]:checked')?.value || '';
+  const result = document.querySelector('input[name="result"]:checked')?.value || '';
+
+  const parts = [];
+  document.querySelectorAll('#partsBody tr').forEach(tr => {
+    const inputs = tr.querySelectorAll('input');
+    if (inputs[0].value || inputs[1].value) {
+      parts.push({ pn: inputs[0].value, name: inputs[1].value, installed: inputs[2].value, needed: inputs[3].value });
+    }
+  });
+
+  return {
+    ticketNum: document.getElementById('ticketNum').value,
+    actDate: document.getElementById('actDate').value,
+    timeStart: document.getElementById('timeStart').value,
+    timeEnd: document.getElementById('timeEnd').value,
+    orgName: document.getElementById('orgName').value,
+    orgAddress: document.getElementById('orgAddress').value,
+    contactName: document.getElementById('contactName').value,
+    contactPhone: document.getElementById('contactPhone').value,
+    model: document.getElementById('model').value,
+    serial: document.getElementById('serial').value,
+    ipAddr: document.getElementById('ipAddr').value,
+    firmware: document.getElementById('firmware').value,
+    cntBW: document.getElementById('cntBW').value,
+    cntColor: document.getElementById('cntColor').value,
+    workTypes,
+    workComment: document.getElementById('workComment').value,
+    deviceState,
+    result,
+    parts,
+    engineerName: document.getElementById('engineerName').value,
+    clientName: document.getElementById('clientName').value,
+    managerEmail: document.getElementById('managerEmail').value,
+    signatureData: hasSig ? canvas.toDataURL('image/png') : null
+  };
+}
+
+// ===== ВАЛИДАЦИЯ =====
+function validate(data) {
+  if (!data.ticketNum) return 'Укажите номер заявки';
+  if (!data.orgName) return 'Укажите организацию заказчика';
+  if (!data.model) return 'Укажите модель оборудования';
+  if (!data.engineerName) return 'Укажите ФИО инженера';
+  if (!data.managerEmail) return 'Укажите email менеджера';
+  if (!hasSig) return 'Необходима подпись клиента';
+  return null;
+}
+
+// ===== ОТПРАВКА =====
+async function submitAct() {
+  const data = collectData();
+  const err = validate(data);
+  const statusEl = document.getElementById('statusMsg');
+  const btn = document.getElementById('submitBtn');
+
+  if (err) {
+    statusEl.className = 'status-msg error';
+    statusEl.textContent = '⚠️ ' + err;
+    statusEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Отправка...';
+  statusEl.className = 'status-msg loading';
+  statusEl.textContent = '⏳ Формируем акт и отправляем...';
+  statusEl.style.display = 'block';
+  statusEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  try {
+    const response = await fetch('/api/send-act', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+      statusEl.className = 'status-msg success';
+      statusEl.textContent = '✅ Акт успешно отправлен менеджеру на ' + data.managerEmail;
+      btn.textContent = '✅ Отправлено';
+    } else {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || 'Ошибка сервера');
+    }
+  } catch (e) {
+    statusEl.className = 'status-msg error';
+    statusEl.textContent = '❌ Ошибка отправки: ' + e.message;
+    btn.disabled = false;
+    btn.textContent = '📤 Отправить акт менеджеру';
+  }
+}
+</script>
+</body>
+</html>
