@@ -233,7 +233,7 @@
     <div class="row-2">
       <div class="field">
         <label>Номер заявки <span class="required-star">*</span></label>
-        <input type="text" id="ticketNum" placeholder="H175268" inputmode="text" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+        <input type="text" id="ticketNum" inputmode="text" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
       </div>
       <div class="field">
         <label>Дата <span class="required-star">*</span></label>
@@ -257,20 +257,20 @@
     <div class="card-title">🏢 Заказчик</div>
     <div class="field">
       <label>Организация (заказчик) <span class="required-star">*</span></label>
-      <input type="text" id="orgName" placeholder="АО ВCITA НКО">
+      <input type="text" id="orgName">
     </div>
     <div class="field">
       <label>Адрес проведения работ <span class="required-star">*</span></label>
-      <input type="text" id="orgAddress" placeholder="ул. Ольминского, д.6">
+      <input type="text" id="orgAddress">
     </div>
     <div class="row-2">
       <div class="field">
         <label>Контактное лицо</label>
-        <input type="text" id="contactName" placeholder="ФИО">
+        <input type="text" id="contactName">
       </div>
       <div class="field">
         <label>Телефон</label>
-        <input type="tel" id="contactPhone" placeholder="+7 (xxx) xxx-xx-xx" inputmode="tel">
+        <input type="tel" id="contactPhone" inputmode="tel">
       </div>
     </div>
   </div>
@@ -281,31 +281,31 @@
     <div class="row-2">
       <div class="field">
         <label>Модель <span class="required-star">*</span></label>
-        <input type="text" id="model" placeholder="HP LJ M225rdn" lang="en" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+        <input type="text" id="model" lang="en" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       </div>
       <div class="field">
         <label>Серийный номер</label>
-        <input type="text" id="serial" placeholder="CNB6H6XBSX" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
+        <input type="text" id="serial" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
       </div>
     </div>
     <div class="row-2">
       <div class="field">
         <label>IP адрес</label>
-        <input type="text" id="ipAddr" placeholder="192.168.0.102" inputmode="decimal">
+        <input type="text" id="ipAddr" inputmode="decimal">
       </div>
       <div class="field">
         <label>Версия прошивки</label>
-        <input type="text" id="firmware" placeholder="20150129">
+        <input type="text" id="firmware">
       </div>
     </div>
     <div class="row-2">
       <div class="field">
         <label>Счётчик Ч/Б</label>
-        <input type="number" id="cntBW" placeholder="109675" inputmode="numeric">
+        <input type="number" id="cntBW" inputmode="numeric">
       </div>
       <div class="field">
         <label>Счётчик Цвет</label>
-        <input type="number" id="cntColor" placeholder="—" inputmode="numeric">
+        <input type="number" id="cntColor" inputmode="numeric">
       </div>
     </div>
   </div>
@@ -323,7 +323,7 @@
     </div>
     <div class="field" style="margin-top:10px">
       <label>Дополнительная информация</label>
-      <textarea id="workComment" placeholder="Описание выполненных работ..."></textarea>
+      <textarea id="workComment"></textarea>
     </div>
   </div>
 
@@ -413,7 +413,7 @@
     <input type="hidden" id="engineerSigData">
     <div class="field" style="margin-top:12px;">
       <label>Email менеджера (куда отправить акт) <span class="required-star">*</span></label>
-      <input type="email" id="managerEmail" placeholder="manager@company.ru" inputmode="email">
+      <input type="email" id="managerEmail" inputmode="email">
     </div>
   </div>
 
@@ -422,7 +422,7 @@
     <div class="card-title">✍️ Подпись представителя клиента</div>
     <div class="field">
       <label>ФИО представителя клиента</label>
-      <input type="text" id="clientName" placeholder="Петров П.П.">
+      <input type="text" id="clientName">
     </div>
     <div class="field">
       <label>Подпись <span class="required-star">*</span> — проведите пальцем по экрану</label>
@@ -447,26 +447,33 @@
 </div>
 
 <script>
-// ===== ПОДПИСЬ =====
+// ===== ПОДПИСЬ КЛИЕНТА =====
 const canvas = document.getElementById('sigCanvas');
 const ctx = canvas.getContext('2d');
 let isDrawing = false;
 let hasSig = false;
+let sigLines = []; // храним все линии для перерисовки
 
-function initCanvas() {
-  const rect = canvas.getBoundingClientRect();
+function setupCanvas() {
   const ratio = window.devicePixelRatio || 1;
-  canvas.width = rect.width * ratio;
+  const w = canvas.offsetWidth;
+  canvas.width = w * ratio;
   canvas.height = 180 * ratio;
-  canvas.style.width = rect.width + 'px';
   canvas.style.height = '180px';
-  ctx.scale(ratio, ratio);
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.strokeStyle = '#1a1a1a';
   ctx.lineWidth = 2.5;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
+  // Перерисовываем сохранённые линии
+  sigLines.forEach(line => {
+    ctx.beginPath();
+    line.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y));
+    ctx.stroke();
+  });
 }
-initCanvas();
+
+window.addEventListener('load', setupCanvas);
 
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
@@ -474,30 +481,60 @@ function getPos(e) {
   return { x: src.clientX - rect.left, y: src.clientY - rect.top };
 }
 
-canvas.addEventListener('mousedown', e => { isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
-canvas.addEventListener('mousemove', e => { if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; document.getElementById('sigHint').style.display = 'none'; });
-canvas.addEventListener('mouseup', () => isDrawing = false);
-canvas.addEventListener('mouseleave', () => isDrawing = false);
+let currentLine = [];
+canvas.addEventListener('mousedown', e => {
+  isDrawing = true; currentLine = [];
+  const p = getPos(e); currentLine.push(p);
+  ctx.beginPath(); ctx.moveTo(p.x, p.y);
+});
+canvas.addEventListener('mousemove', e => {
+  if (!isDrawing) return;
+  const p = getPos(e); currentLine.push(p);
+  ctx.lineTo(p.x, p.y); ctx.stroke();
+  hasSig = true; document.getElementById('sigHint').style.display = 'none';
+});
+canvas.addEventListener('mouseup', () => { isDrawing = false; if (currentLine.length) sigLines.push([...currentLine]); });
+canvas.addEventListener('mouseleave', () => { isDrawing = false; if (currentLine.length) sigLines.push([...currentLine]); });
 
-canvas.addEventListener('touchstart', e => { e.preventDefault(); isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); }, { passive: false });
-canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; document.getElementById('sigHint').style.display = 'none'; }, { passive: false });
-canvas.addEventListener('touchend', () => isDrawing = false);
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault(); isDrawing = true; currentLine = [];
+  const p = getPos(e); currentLine.push(p);
+  ctx.beginPath(); ctx.moveTo(p.x, p.y);
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault(); if (!isDrawing) return;
+  const p = getPos(e); currentLine.push(p);
+  ctx.lineTo(p.x, p.y); ctx.stroke();
+  hasSig = true; document.getElementById('sigHint').style.display = 'none';
+}, { passive: false });
+canvas.addEventListener('touchend', () => { isDrawing = false; if (currentLine.length) sigLines.push([...currentLine]); });
 
 function getSignatureData() {
   if (!hasSig) return null;
-  const tempCanvas = document.createElement('canvas');
-  tempCanvas.width = canvas.width;
-  tempCanvas.height = canvas.height;
-  const tempCtx = tempCanvas.getContext('2d');
-  tempCtx.fillStyle = '#ffffff';
-  tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-  tempCtx.drawImage(canvas, 0, 0);
-  return tempCanvas.toDataURL('image/png');
+  // Рисуем на чистом canvas с белым фоном
+  const out = document.createElement('canvas');
+  const ratio = window.devicePixelRatio || 1;
+  out.width = canvas.offsetWidth * ratio;
+  out.height = 180 * ratio;
+  const octx = out.getContext('2d');
+  octx.fillStyle = '#ffffff';
+  octx.fillRect(0, 0, out.width, out.height);
+  octx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  octx.strokeStyle = '#1a1a1a';
+  octx.lineWidth = 2.5;
+  octx.lineCap = 'round';
+  octx.lineJoin = 'round';
+  sigLines.forEach(line => {
+    octx.beginPath();
+    line.forEach((pt, i) => i === 0 ? octx.moveTo(pt.x, pt.y) : octx.lineTo(pt.x, pt.y));
+    octx.stroke();
+  });
+  return out.toDataURL('image/png');
 }
 
 function clearSignature() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  hasSig = false;
+  hasSig = false; sigLines = []; currentLine = [];
   document.getElementById('sigHint').style.display = 'block';
 }
 
