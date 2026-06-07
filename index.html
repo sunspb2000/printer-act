@@ -312,7 +312,7 @@
 
   <!-- ТИП РАБОТ -->
   <div class="card">
-    <div class="card-title">🔧 Тип работ</div>
+    <div class="card-title">🔧 Тип работ <span class="required-star">*</span></div>
     <div class="check-cols">
       <label class="check-item"><input type="checkbox" name="workType" value="Диагностика"><span>Диагностика</span></label>
       <label class="check-item"><input type="checkbox" name="workType" value="Ремонт"><span>Ремонт</span></label>
@@ -329,7 +329,7 @@
 
   <!-- СОСТОЯНИЕ -->
   <div class="card">
-    <div class="card-title">📊 Состояние оборудования</div>
+    <div class="card-title">📊 Состояние оборудования <span class="required-star">*</span></div>
     <div class="check-group">
       <label class="check-item"><input type="radio" name="deviceState" value="Исправен (301)"><span>✅ Исправен (301)</span></label>
       <label class="check-item"><input type="radio" name="deviceState" value="Частично работоспособен (302)"><span>⚠️ Частично работоспособен (302)</span></label>
@@ -339,7 +339,7 @@
 
   <!-- РЕЗУЛЬТАТ -->
   <div class="card">
-    <div class="card-title">🏁 Результат выполнения работ</div>
+    <div class="card-title">🏁 Результат выполнения работ <span class="required-star">*</span></div>
     <div class="check-cols">
       <label class="check-item"><input type="radio" name="result" value="Вызов завершён"><span>Вызов завершён</span></label>
       <label class="check-item"><input type="radio" name="result" value="Требуется доп. выезд"><span>Доп. выезд</span></label>
@@ -448,16 +448,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <script>
-// ===== ПОДПИСЬ КЛИЕНТА через signature_pad =====
+// ===== ПОДПИСЬ КЛИЕНТА =====
 let signaturePad;
+let sigData = null;
 
-window.addEventListener('load', () => {
+function initSignaturePad() {
   const canvas = document.getElementById('sigCanvas');
-  // Устанавливаем реальный размер canvas по его CSS-размеру
-  const ratio = window.devicePixelRatio || 1;
-  canvas.width = canvas.offsetWidth * ratio;
-  canvas.height = canvas.offsetHeight * ratio;
-  canvas.getContext('2d').scale(ratio, ratio);
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.offsetWidth;
+  canvas.height = 180;
 
   signaturePad = new SignaturePad(canvas, {
     backgroundColor: 'rgb(255,255,255)',
@@ -469,7 +468,15 @@ window.addEventListener('load', () => {
   signaturePad.addEventListener('beginStroke', () => {
     document.getElementById('sigHint').style.display = 'none';
   });
-});
+
+  signaturePad.addEventListener('endStroke', () => {
+    if (!signaturePad.isEmpty()) {
+      sigData = signaturePad.toDataURL('image/png');
+    }
+  });
+}
+
+window.addEventListener('load', initSignaturePad);
 
 function getSignatureData() {
   if (!signaturePad || signaturePad.isEmpty()) return null;
@@ -477,7 +484,7 @@ function getSignatureData() {
 }
 
 function clearSignature() {
-  if (signaturePad) signaturePad.clear();
+  if (signaturePad) { signaturePad.clear(); sigData = null; }
   document.getElementById('sigHint').style.display = 'block';
 }
 
