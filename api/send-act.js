@@ -25,6 +25,11 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: 'Email менеджера не указан' }), { status: 400 });
   }
 
+  // Проверяем что подпись пришла
+  if (!signatureData || signatureData.length < 100) {
+    return new Response(JSON.stringify({ error: 'Подпись не передана или повреждена' }), { status: 400 });
+  }
+
   // Формируем таблицу запчастей
   const partsRows = (parts || []).filter(p => p.name || p.pn).map(p => `
     <tr>
@@ -50,9 +55,16 @@ export default async function handler(req) {
   ` : '<p style="color:#999;font-size:13px;">Не указано</p>';
 
   // Подпись клиента
+  const sigBase64 = signatureData ? signatureData.replace(/^data:image\/png;base64,/, '') : null;
+  const sigEngBase64 = signatureEngData ? signatureEngData.replace(/^data:image\/png;base64,/, '') : null;
+
   const sigBlock = signatureData
-    ? `<img src="${signatureData}" style="max-width:200px;height:70px;border:1px dashed #ccc;border-radius:6px;object-fit:contain;background:#fafbff;">`
+    ? `<img src="${signatureData}" width="200" height="80" style="display:block;border:1px dashed #ccc;border-radius:6px;background:#fafbff;" alt="Подпись клиента">`
     : '<span style="color:#999;font-size:13px;">Подпись не получена</span>';
+
+  const sigEngBlock = signatureEngData
+    ? `<img src="${signatureEngData}" width="200" height="80" style="display:block;border:1px dashed #ccc;border-radius:6px;background:#fafbff;" alt="Подпись инженера">`
+    : '<div style="width:160px;height:50px;border:1px dashed #ccc;border-radius:6px;background:#fafbff;"></div>';
 
   // Форматируем дату
   const dateFormatted = actDate ? new Date(actDate).toLocaleDateString('ru-RU') : '—';
@@ -162,9 +174,7 @@ export default async function handler(req) {
         <td width="50%" valign="top">
           <div style="font-size:11px;color:#888;margin-bottom:4px;">Инженер (исполнитель)</div>
           <div style="font-size:13px;font-weight:700;margin-bottom:8px;">${engineerName || '—'}</div>
-          ${signatureEngData
-            ? `<img src="${signatureEngData}" style="max-width:200px;height:70px;border:1px dashed #ccc;border-radius:6px;object-fit:contain;background:#fafbff;">`
-            : '<div style="width:160px;height:50px;border:1px dashed #ccc;border-radius:6px;background:#fafbff;"></div>'}
+          ${sigEngBlock}
         </td>
       </tr>
     </table>
