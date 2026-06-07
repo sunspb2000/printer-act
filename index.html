@@ -233,7 +233,7 @@
     <div class="row-2">
       <div class="field">
         <label>Номер заявки <span class="required-star">*</span></label>
-        <input type="text" id="ticketNum" placeholder="H175268" inputmode="numeric">
+        <input type="text" id="ticketNum" placeholder="H175268" inputmode="text" autocomplete="off" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
       </div>
       <div class="field">
         <label>Дата <span class="required-star">*</span></label>
@@ -281,11 +281,11 @@
     <div class="row-2">
       <div class="field">
         <label>Модель <span class="required-star">*</span></label>
-        <input type="text" id="model" placeholder="HP LJ M225rdn">
+        <input type="text" id="model" placeholder="HP LJ M225rdn" lang="en" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       </div>
       <div class="field">
         <label>Серийный номер</label>
-        <input type="text" id="serial" placeholder="CNB6H6XBSX" autocomplete="off">
+        <input type="text" id="serial" placeholder="CNB6H6XBSX" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase()">
       </div>
     </div>
     <div class="row-2">
@@ -390,10 +390,28 @@
   <div class="card">
     <div class="card-title">👤 Инженер</div>
     <div class="field">
-      <label>ФИО инженера <span class="required-star">*</span></label>
-      <input type="text" id="engineerName" placeholder="Иванов И.И.">
+      <label>Выберите инженера <span class="required-star">*</span></label>
+      <select id="engineerSelect" onchange="selectEngineer(this.value)">
+        <option value="">— Выберите из списка —</option>
+        <option value="Ли">Ли</option>
+        <option value="Актуганов">Актуганов</option>
+        <option value="Васильев">Васильев</option>
+        <option value="Курпатов">Курпатов</option>
+        <option value="Рамазанов">Рамазанов</option>
+        <option value="Брынцев">Брынцев</option>
+        <option value="Михайлов">Михайлов</option>
+        <option value="Жемерин">Жемерин</option>
+      </select>
     </div>
-    <div class="field">
+    <div id="engineerSigPreview" style="display:none; margin-top:10px;">
+      <div style="font-size:12px; color:#555; margin-bottom:6px;">Подпись инженера:</div>
+      <div style="border:1px dashed #1a3a5c; border-radius:8px; padding:8px; background:#fafbff; display:inline-block;">
+        <img id="engineerSigImg" src="" style="height:60px; max-width:200px; object-fit:contain;">
+      </div>
+    </div>
+    <input type="hidden" id="engineerName">
+    <input type="hidden" id="engineerSigData">
+    <div class="field" style="margin-top:12px;">
       <label>Email менеджера (куда отправить акт) <span class="required-star">*</span></label>
       <input type="email" id="managerEmail" placeholder="manager@company.ru" inputmode="email">
     </div>
@@ -435,21 +453,20 @@ const ctx = canvas.getContext('2d');
 let isDrawing = false;
 let hasSig = false;
 
-function resizeCanvas() {
+function initCanvas() {
   const rect = canvas.getBoundingClientRect();
   const ratio = window.devicePixelRatio || 1;
-  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   canvas.width = rect.width * ratio;
   canvas.height = 180 * ratio;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '180px';
   ctx.scale(ratio, ratio);
-  ctx.putImageData(imgData, 0, 0);
   ctx.strokeStyle = '#1a1a1a';
   ctx.lineWidth = 2.5;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 }
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+initCanvas();
 
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
@@ -466,13 +483,57 @@ canvas.addEventListener('touchstart', e => { e.preventDefault(); isDrawing = tru
 canvas.addEventListener('touchmove', e => { e.preventDefault(); if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; document.getElementById('sigHint').style.display = 'none'; }, { passive: false });
 canvas.addEventListener('touchend', () => isDrawing = false);
 
+function getSignatureData() {
+  if (!hasSig) return null;
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = canvas.width;
+  tempCanvas.height = canvas.height;
+  const tempCtx = tempCanvas.getContext('2d');
+  tempCtx.fillStyle = '#ffffff';
+  tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+  tempCtx.drawImage(canvas, 0, 0);
+  return tempCanvas.toDataURL('image/png');
+}
+
 function clearSignature() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   hasSig = false;
   document.getElementById('sigHint').style.display = 'block';
 }
 
-// ===== ТАБЛИЦА ЗАПЧАСТЕЙ =====
+// ===== СПРАВОЧНИК ИНЖЕНЕРОВ =====
+// Когда пришлёшь реальные подписи — заменим null на строку base64
+const ENGINEERS = {
+  'Ли':        { sig: null },
+  'Актуганов': { sig: null },
+  'Васильев':  { sig: null },
+  'Курпатов':  { sig: null },
+  'Рамазанов': { sig: null },
+  'Брынцев':   { sig: null },
+  'Михайлов':  { sig: null },
+  'Жемерин':   { sig: null },
+};
+
+function selectEngineer(name) {
+  document.getElementById('engineerName').value = name;
+  const eng = ENGINEERS[name];
+  const preview = document.getElementById('engineerSigPreview');
+  const img = document.getElementById('engineerSigImg');
+  const sigData = document.getElementById('engineerSigData');
+  if (name && eng && eng.sig) {
+    img.src = eng.sig;
+    sigData.value = eng.sig;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+    sigData.value = '';
+  }
+}
+
+function getSignatureEngData() {
+  return document.getElementById('engineerSigData').value || null;
+}
+
 function addPartRow() {
   const tbody = document.getElementById('partsBody');
   const tr = document.createElement('tr');
@@ -525,7 +586,8 @@ function collectData() {
     engineerName: document.getElementById('engineerName').value,
     clientName: document.getElementById('clientName').value,
     managerEmail: document.getElementById('managerEmail').value,
-    signatureData: hasSig ? canvas.toDataURL('image/png') : null
+    signatureData: getSignatureData(),
+    signatureEngData: getSignatureEngData()
   };
 }
 
@@ -534,7 +596,7 @@ function validate(data) {
   if (!data.ticketNum) return 'Укажите номер заявки';
   if (!data.orgName) return 'Укажите организацию заказчика';
   if (!data.model) return 'Укажите модель оборудования';
-  if (!data.engineerName) return 'Укажите ФИО инженера';
+  if (!data.engineerName) return 'Выберите инженера из списка';
   if (!data.managerEmail) return 'Укажите email менеджера';
   if (!hasSig) return 'Необходима подпись клиента';
   return null;
