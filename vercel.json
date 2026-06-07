@@ -1,7 +1,1 @@
-{
-  "functions": {
-    "api/send-act.js": {
-      "runtime": "nodejs20.x"
-    }
-  }
-}
+json{}
