@@ -18,7 +18,7 @@ export default async function handler(req) {
     model, serial, ipAddr, firmware, cntBW, cntColor,
     workTypes, workComment, deviceState, result,
     parts, engineerName, clientName, managerEmail,
-    signatureData
+    signatureData, signatureEngData
   } = data;
 
   if (!managerEmail) {
@@ -162,7 +162,9 @@ export default async function handler(req) {
         <td width="50%" valign="top">
           <div style="font-size:11px;color:#888;margin-bottom:4px;">Инженер (исполнитель)</div>
           <div style="font-size:13px;font-weight:700;margin-bottom:8px;">${engineerName || '—'}</div>
-          <div style="width:160px;height:50px;border:1px dashed #ccc;border-radius:6px;background:#fafbff;"></div>
+          ${signatureEngData
+            ? `<img src="${signatureEngData}" style="max-width:200px;height:70px;border:1px dashed #ccc;border-radius:6px;object-fit:contain;background:#fafbff;">`
+            : '<div style="width:160px;height:50px;border:1px dashed #ccc;border-radius:6px;background:#fafbff;"></div>'}
         </td>
       </tr>
     </table>
