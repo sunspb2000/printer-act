@@ -1,16 +1,11 @@
-export const config = { runtime: 'edge' };
+export const config = { runtime: 'nodejs' };
 
-export default async function handler(req) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  let data;
-  try {
-    data = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON' }), { status: 400 });
-  }
+  const data = req.body;
 
   const {
     ticketNum, actDate, timeStart, timeEnd,
@@ -21,14 +16,8 @@ export default async function handler(req) {
     signatureData, signatureEngData
   } = data;
 
-  if (!managerEmail) {
-    return new Response(JSON.stringify({ error: 'Email менеджера не указан' }), { status: 400 });
-  }
-
-  // Проверяем что подпись пришла
-  if (!signatureData || signatureData.length < 100) {
-    return new Response(JSON.stringify({ error: 'Подпись не передана или повреждена' }), { status: 400 });
-  }
+  if (!managerEmail) return res.status(400).json({ error: 'Email менеджера не указан' });
+  if (!signatureData || signatureData.length < 100) return res.status(400).json({ error: 'Подпись не передана' });
 
   // Формируем таблицу запчастей
   const partsRows = (parts || []).filter(p => p.name || p.pn).map(p => `
@@ -198,11 +187,8 @@ export default async function handler(req) {
 </html>
   `;
 
-  // Отправка через Resend
   const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) {
-    return new Response(JSON.stringify({ error: 'RESEND_API_KEY не настроен' }), { status: 500 });
-  }
+  if (!resendKey) return res.status(500).json({ error: 'RESEND_API_KEY не настроен' });
 
   const attachments = [];
   if (sigBase64) {
@@ -235,11 +221,8 @@ export default async function handler(req) {
 
   if (!resendRes.ok) {
     const err = await resendRes.json().catch(() => ({}));
-    return new Response(JSON.stringify({ error: err.message || 'Ошибка Resend' }), { status: 500 });
+    return res.status(500).json({ error: err.message || 'Ошибка Resend' });
   }
 
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' }
-  });
+  return res.status(200).json({ ok: true });
 }
