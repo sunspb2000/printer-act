@@ -58,12 +58,12 @@ export default async function handler(req) {
   const sigBase64 = signatureData ? signatureData.replace(/^data:image\/png;base64,/, '') : null;
   const sigEngBase64 = signatureEngData ? signatureEngData.replace(/^data:image\/png;base64,/, '') : null;
 
-  const sigBlock = signatureData
-    ? `<img src="${signatureData}" width="200" height="80" style="display:block;border:1px dashed #ccc;border-radius:6px;background:#fafbff;" alt="Подпись клиента">`
+  const sigBlock = sigBase64
+    ? `<div style="border:1px dashed #1a3a5c;border-radius:6px;padding:8px 12px;background:#f0f5ff;font-size:12px;color:#1a3a5c;">📎 Подпись во вложении: <strong>podpis_klienta.png</strong></div>`
     : '<span style="color:#999;font-size:13px;">Подпись не получена</span>';
 
-  const sigEngBlock = signatureEngData
-    ? `<img src="${signatureEngData}" width="200" height="80" style="display:block;border:1px dashed #ccc;border-radius:6px;background:#fafbff;" alt="Подпись инженера">`
+  const sigEngBlock = sigEngBase64
+    ? `<div style="border:1px dashed #1a3a5c;border-radius:6px;padding:8px 12px;background:#f0f5ff;font-size:12px;color:#1a3a5c;">📎 Подпись во вложении: <strong>podpis_inzhenera.png</strong></div>`
     : '<div style="width:160px;height:50px;border:1px dashed #ccc;border-radius:6px;background:#fafbff;"></div>';
 
   // Форматируем дату
@@ -204,6 +204,20 @@ export default async function handler(req) {
     return new Response(JSON.stringify({ error: 'RESEND_API_KEY не настроен' }), { status: 500 });
   }
 
+  const attachments = [];
+  if (sigBase64) {
+    attachments.push({
+      filename: 'podpis_klienta.png',
+      content: sigBase64
+    });
+  }
+  if (sigEngBase64) {
+    attachments.push({
+      filename: 'podpis_inzhenera.png',
+      content: sigEngBase64
+    });
+  }
+
   const resendRes = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -214,7 +228,8 @@ export default async function handler(req) {
       from: 'Акты <onboarding@resend.dev>',
       to: [managerEmail],
       subject: `Акт №${ticketNum || '—'} | ${orgName || '—'} | ${model || '—'} | ${dateFormatted}`,
-      html: htmlBody
+      html: htmlBody,
+      attachments: attachments.length > 0 ? attachments : undefined
     })
   });
 
